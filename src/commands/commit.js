@@ -17,11 +17,30 @@ export async function commitCommand() {
     }
 
     spinner.text = 'Analyzing diff and generating commit message...';
-    const suggestedMessage = await generateCommitMessage(diff);
-    spinner.succeed('Message generated.');
+    let firstChunk = true;
+    let suggestedMessage = '';
 
-    console.log(chalk.bold.blue('\nSuggested Commit Message:'));
-    console.log(chalk.green(`"${suggestedMessage}"\n`));
+    await generateCommitMessage(diff, (chunk) => {
+      if (firstChunk) {
+        spinner.succeed('Message generated.');
+        console.log(chalk.bold.blue('\nSuggested Commit Message:'));
+        process.stdout.write(chalk.green('"'));
+        firstChunk = false;
+      }
+      process.stdout.write(chalk.green(chunk));
+      suggestedMessage += chunk;
+    });
+
+    if (firstChunk) {
+      spinner.succeed('Message generated.');
+      console.log(chalk.bold.blue('\nSuggested Commit Message:'));
+      process.stdout.write(chalk.green('"'));
+    }
+    
+    console.log(chalk.green('"\n'));
+    
+    // Clean up quotes
+    suggestedMessage = suggestedMessage.trim().replace(/^"/, '').replace(/"$/, '');
 
     const { action } = await inquirer.prompt([
       {

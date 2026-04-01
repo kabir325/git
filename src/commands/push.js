@@ -17,11 +17,21 @@ export async function pushCommand() {
     console.log(chalk.dim(dryRunOutput));
 
     spinner.start('Generating AI explanation...');
-    const explanation = await explainCommandIntent('git push', context);
-    spinner.succeed('Explanation generated.\n');
+    let firstChunk = true;
+    await explainCommandIntent('git push', context, (chunk) => {
+      if (firstChunk) {
+        spinner.succeed('Explanation generated.\n');
+        console.log(chalk.cyan.bold('AI Explanation:'));
+        firstChunk = false;
+      }
+      process.stdout.write(chalk.white(chunk));
+    });
 
-    console.log(chalk.cyan.bold('AI Explanation:'));
-    console.log(chalk.white(`${explanation}\n`));
+    if (firstChunk) {
+      spinner.succeed('Explanation generated.\n');
+      console.log(chalk.cyan.bold('AI Explanation:'));
+    }
+    console.log('\n\n');
 
     const { confirm } = await inquirer.prompt([
       {
