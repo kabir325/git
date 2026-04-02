@@ -24,7 +24,7 @@ graph TD
     LocalGit:::external
 
     %% MCP Opt-In Integration
-    subgraph "Opt-In Integrations (MCP)"
+    subgraph MCP [Opt-In Integrations MCP]
         RCB -.->|If Enabled via Config| MCP_Manager[MCP Client Manager]
         MCP_Manager:::mcp
         
@@ -33,7 +33,7 @@ graph TD
         MCP_GitHub -.->|API| GitHubCloud[(GitHub APIs: PRs, Issues)]
         GitHubCloud:::external
 
-        MCP_Manager -.->|stdio (Future)| MCP_Jira[Jira MCP Server]
+        MCP_Manager -.->|stdio Future| MCP_Jira[Jira MCP Server]
         MCP_Jira:::external
         MCP_Jira -.->|API| JiraCloud[(Jira APIs)]
         JiraCloud:::external
