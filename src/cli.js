@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { initCommand } from './commands/init.js';
 import { doCommand } from './commands/do.js';
 import { commitCommand } from './commands/commit.js';
 import { pushCommand } from './commands/push.js';
@@ -13,6 +14,11 @@ program
   .name('gitguide')
   .description('AI-powered execution engine for Git operations')
   .version('1.0.0');
+
+program
+  .command('init')
+  .description('Interactively initialize GitGuide and configure remote MCP integrations')
+  .action(initCommand);
 
 program
   .command('do <instruction>')
