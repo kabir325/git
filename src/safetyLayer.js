@@ -1,8 +1,12 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { executePlan } from './executionEngine.js';
+import { getConfig } from './config.js';
+import { setAutoExecuteEnabled } from './configStore.js';
 
 export async function promptSafetyLayer(plan) {
+  const config = getConfig();
+
   console.log('\n---');
   console.log(chalk.bold.blue('Execution Plan:'));
   console.log('');
@@ -14,6 +18,14 @@ export async function promptSafetyLayer(plan) {
 
   console.log('---\n');
 
+  if (config.execution.autoExecute) {
+    console.log(chalk.dim('Auto execute is enabled. Running the plan without an approval prompt.\n'));
+    await executePlan(plan);
+    return;
+  }
+
+  console.log(chalk.dim('Tip: you can enable auto execute later from GitGuide settings.\n'));
+
   const { action } = await inquirer.prompt([
     {
       type: 'list',
@@ -21,6 +33,7 @@ export async function promptSafetyLayer(plan) {
       message: 'Proceed?',
       choices: [
         { name: 'Yes (Execute Plan)', value: 'yes' },
+        { name: 'Yes, and enable auto execute for future runs', value: 'enable-auto-execute' },
         { name: 'Edit (Modify Steps)', value: 'edit' },
         { name: 'No (Cancel)', value: 'no' }
       ]
@@ -28,6 +41,10 @@ export async function promptSafetyLayer(plan) {
   ]);
 
   if (action === 'yes') {
+    await executePlan(plan);
+  } else if (action === 'enable-auto-execute') {
+    setAutoExecuteEnabled(true);
+    console.log(chalk.green('Auto execute enabled for future runs.'));
     await executePlan(plan);
   } else if (action === 'edit') {
     await handleEditPlan(plan);

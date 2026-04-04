@@ -83,6 +83,12 @@ This command will:
 1. Check if you have a remote origin set (and prompt you to add one if you don't).
 2. Ask if you want to enable **GitHub MCP Integration**.
 3. If enabled, prompt you for a GitHub Personal Access Token, saving it securely to a local `.env` file and creating a `.gitguide.config.json` file.
+4. Keep auto execute turned off by default so commands still require approval until you enable it in settings.
+
+At any time, you can reopen configuration and update your repository settings with:
+```bash
+gitguide settings
+```
 
 ---
 
@@ -107,25 +113,31 @@ Generate conventional commit messages automatically based on your staged `git di
 gitguide commit
 ```
 
-### 4. Safe Push
+### 4. Settings
+Open an interactive settings menu to update the remote origin, enable or disable auto execute, manage GitHub MCP, and manage the saved GitHub token.
+```bash
+gitguide settings
+```
+
+### 5. Safe Push
 Analyze the impact of a push before actually pushing. GitGuide runs a dry-run and explains exactly what will happen to the remote.
 ```bash
 gitguide push
 ```
 
-### 5. Command Explanation
+### 6. Command Explanation
 Not sure what a command will do? Ask GitGuide to explain it in the context of your current repository state.
 ```bash
 gitguide explain "git rebase main"
 ```
 
-### 6. AI Suggestions
+### 7. AI Suggestions
 Ask the AI what you should do next based on your uncommitted files and branch status.
 ```bash
 gitguide suggest
 ```
 
-### 7. Beautiful Visualization Dashboard
+### 8. Beautiful Visualization Dashboard
 Generate an interactive, full-screen, 2D topological network graph of your repository's history directly in your web browser.
 ```bash
 gitguide visualize

@@ -21,6 +21,9 @@ export function getConfig() {
   const mcpConfig = userConfig.mcp || {};
   
   return {
+    execution: {
+      autoExecute: userConfig.execution?.autoExecute ?? false
+    },
     mcp: {
       github: {
         enabled: mcpConfig.github?.enabled ?? false,

@@ -1,9 +1,12 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
 import { execSync } from 'child_process';
 import ora from 'ora';
+import {
+  ensureGitignoreEntry,
+  setGitHubMcpEnabled,
+  upsertEnvVar
+} from '../configStore.js';
 
 export async function initCommand() {
   console.log(chalk.bold.blue('\nWelcome to GitGuide Initialization! 🧭\n'));
@@ -73,44 +76,11 @@ export async function initCommand() {
   const spinner = ora('Saving configuration...').start();
 
   try {
-    // Save to .gitguide.config.json
-    const configPath = path.join(process.cwd(), '.gitguide.config.json');
-    const configData = {
-      mcp: {
-        github: {
-          enabled: enableMcp
-        }
-      }
-    };
-    fs.writeFileSync(configPath, JSON.stringify(configData, null, 2));
+    setGitHubMcpEnabled(enableMcp);
 
-    // Save to .env
     if (enableMcp && mcpToken) {
-      const envPath = path.join(process.cwd(), '.env');
-      let envContent = '';
-      if (fs.existsSync(envPath)) {
-        envContent = fs.readFileSync(envPath, 'utf8');
-      }
-      
-      // Update or append token
-      if (envContent.includes('GITHUB_PERSONAL_ACCESS_TOKEN=')) {
-        envContent = envContent.replace(/GITHUB_PERSONAL_ACCESS_TOKEN=.*/, `GITHUB_PERSONAL_ACCESS_TOKEN=${mcpToken}`);
-      } else {
-        envContent += `\nGITHUB_PERSONAL_ACCESS_TOKEN=${mcpToken}\n`;
-      }
-      
-      fs.writeFileSync(envPath, envContent.trim() + '\n');
-      
-      // Ensure .env is in .gitignore
-      const gitignorePath = path.join(process.cwd(), '.gitignore');
-      if (fs.existsSync(gitignorePath)) {
-        const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-        if (!gitignoreContent.includes('.env')) {
-          fs.appendFileSync(gitignorePath, '\n# Environment Variables\n.env\n');
-        }
-      } else {
-        fs.writeFileSync(gitignorePath, '# Environment Variables\n.env\n');
-      }
+      upsertEnvVar('GITHUB_PERSONAL_ACCESS_TOKEN', mcpToken);
+      ensureGitignoreEntry('.env');
     }
 
     spinner.succeed(chalk.green('Configuration saved successfully!'));
