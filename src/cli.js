@@ -1,10 +1,12 @@
 import { Command } from 'commander';
+import { initCommand } from './commands/init.js';
 import { doCommand } from './commands/do.js';
 import { commitCommand } from './commands/commit.js';
 import { pushCommand } from './commands/push.js';
 import { explainCommand } from './commands/explain.js';
 import { suggestCommand } from './commands/suggest.js';
 import { visualizeCommand } from './commands/visualize.js';
+import { remoteStatusCommand } from './commands/remoteStatus.js';
 
 const program = new Command();
 
@@ -12,6 +14,11 @@ program
   .name('gitguide')
   .description('AI-powered execution engine for Git operations')
   .version('1.0.0');
+
+program
+  .command('init')
+  .description('Interactively initialize GitGuide and configure remote MCP integrations')
+  .action(initCommand);
 
 program
   .command('do <instruction>')
@@ -42,5 +49,10 @@ program
   .command('visualize')
   .description('Visualize the git commit history and branches in a graph format')
   .action(visualizeCommand);
+
+program
+  .command('remote-status')
+  .description('Use GitHub MCP Server to fetch remote status (Issues, PRs)')
+  .action(remoteStatusCommand);
 
 program.parse(process.argv);

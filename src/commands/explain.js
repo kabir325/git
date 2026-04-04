@@ -10,11 +10,23 @@ export async function explainCommand(gitCommand) {
   spinner.text = 'Analyzing command intent...';
 
   try {
-    const explanation = await explainCommandIntent(gitCommand, context);
-    spinner.succeed('Analysis complete.\n');
-
-    console.log(chalk.bold.blue(`Command: ${gitCommand}`));
-    console.log(chalk.white(`${explanation}\n`));
+    let firstChunk = true;
+    await explainCommandIntent(gitCommand, context, (chunk) => {
+      if (firstChunk) {
+        spinner.succeed('Analysis complete.\n');
+        console.log(chalk.bold.blue(`Command: ${gitCommand}`));
+        firstChunk = false;
+      }
+      process.stdout.write(chalk.white(chunk));
+    });
+    
+    if (firstChunk) {
+      // In case it returns an empty string or stream fails gracefully
+      spinner.succeed('Analysis complete.\n');
+      console.log(chalk.bold.blue(`Command: ${gitCommand}`));
+    }
+    
+    console.log('\n');
   } catch (error) {
     spinner.fail('Error analyzing command');
     console.error(error.message);

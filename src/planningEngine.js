@@ -1,9 +1,9 @@
-export async function callOllama(prompt, model = 'deepseek-coder', format = null) {
+export async function callOllama(prompt, model = 'deepseek-coder', format = null, onChunk = null) {
   try {
     const body = {
       model,
       prompt,
-      stream: false,
+      stream: !!onChunk,
       options: {
         temperature: 0.1
       }
@@ -23,8 +23,42 @@ export async function callOllama(prompt, model = 'deepseek-coder', format = null
       throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.response;
+    if (onChunk) {
+      // Node.js Fetch streams
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let fullText = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (line.trim()) {
+            const data = JSON.parse(line);
+            fullText += data.response;
+            onChunk(data.response);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const data = JSON.parse(buffer);
+        fullText += data.response;
+        onChunk(data.response);
+      }
+
+      return fullText;
+    } else {
+      const data = await response.json();
+      return data.response;
+    }
   } catch (error) {
     console.error('Failed to communicate with Ollama:', error.message);
     process.exit(1);
@@ -92,7 +126,7 @@ CRITICAL INSTRUCTIONS:
   }
 }
 
-export async function explainCommandIntent(command, repoContext) {
+export async function explainCommandIntent(command, repoContext, onChunk) {
   const prompt = `
 You are a helpful Git instructor. The user wants to run the following Git command:
 "${command}"
@@ -109,10 +143,10 @@ Briefly explain:
 Keep it concise, clear, and professional.
 `;
 
-  return await callOllama(prompt, 'deepseek-coder');
+  return await callOllama(prompt, 'deepseek-coder', null, onChunk);
 }
 
-export async function generateCommitMessage(diff) {
+export async function generateCommitMessage(diff, onChunk) {
   const prompt = `
 You are a senior developer writing conventional commit messages.
 Review the following Git diff and generate a concise, conventional commit message (feat, fix, refactor, chore, docs, etc.).
@@ -123,11 +157,11 @@ ${diff.slice(0, 3000)} // Truncated for token limits
 Respond ONLY with the commit message. No explanations, no quotes.
 `;
   
-  let msg = await callOllama(prompt);
+  let msg = await callOllama(prompt, 'deepseek-coder', null, onChunk);
   return msg.trim().replace(/^"/, '').replace(/"$/, '');
 }
 
-export async function suggestNextActions(repoContext) {
+export async function suggestNextActions(repoContext, onChunk) {
   const prompt = `
 You are a Git advisor. Based on the current repository state, suggest 2-3 logical next actions.
 
@@ -138,5 +172,5 @@ ${repoContext.status || '(clean)'}
 
 Keep it brief and actionable. Return a list.
 `;
-  return await callOllama(prompt);
+  return await callOllama(prompt, 'deepseek-coder', null, onChunk);
 }

@@ -8,11 +8,22 @@ export async function suggestCommand() {
   const context = buildRepoContext();
 
   try {
-    const suggestions = await suggestNextActions(context);
-    spinner.succeed('Analysis complete.\n');
-
-    console.log(chalk.bold.blue('Suggested Next Actions:'));
-    console.log(chalk.white(`${suggestions}\n`));
+    let firstChunk = true;
+    await suggestNextActions(context, (chunk) => {
+      if (firstChunk) {
+        spinner.succeed('Analysis complete.\n');
+        console.log(chalk.bold.blue('Suggested Next Actions:'));
+        firstChunk = false;
+      }
+      process.stdout.write(chalk.white(chunk));
+    });
+    
+    if (firstChunk) {
+      spinner.succeed('Analysis complete.\n');
+      console.log(chalk.bold.blue('Suggested Next Actions:'));
+    }
+    
+    console.log('\n');
   } catch (error) {
     spinner.fail('Error generating suggestions');
     console.error(error.message);

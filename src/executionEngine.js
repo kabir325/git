@@ -43,11 +43,16 @@ ${error.message.substring(0, 1000)}
 
 Please suggest a quick fix or next step to resolve this issue in natural language. Keep it brief.
 `;
-      const fix = await callOllama(fixPrompt);
-      console.log(chalk.yellow.bold('\nAI Suggestion to fix:'));
-      console.log(chalk.white(fix));
+      let firstChunk = true;
+      await callOllama(fixPrompt, 'deepseek-coder', null, (chunk) => {
+        if (firstChunk) {
+          console.log(chalk.yellow.bold('\nAI Suggestion to fix:'));
+          firstChunk = false;
+        }
+        process.stdout.write(chalk.white(chunk));
+      });
       
-      console.log(chalk.red.bold('\nExecution stopped due to error.'));
+      console.log(chalk.red.bold('\n\nExecution stopped due to error.'));
       break;
     }
   }
