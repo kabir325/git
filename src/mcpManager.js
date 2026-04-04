@@ -69,6 +69,21 @@ class MCPManager {
       throw error;
     }
   }
+
+  async listGitHubTools() {
+    const client = await this.initializeGitHub();
+    if (!client) {
+      return [];
+    }
+
+    try {
+      const response = await client.listTools();
+      return response?.tools || [];
+    } catch (error) {
+      console.error("Failed to list GitHub MCP tools:", error.message);
+      return [];
+    }
+  }
 }
 
 export const mcpManager = new MCPManager();
