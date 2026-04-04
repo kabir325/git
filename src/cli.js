@@ -7,6 +7,7 @@ import { explainCommand } from './commands/explain.js';
 import { suggestCommand } from './commands/suggest.js';
 import { visualizeCommand } from './commands/visualize.js';
 import { remoteStatusCommand } from './commands/remoteStatus.js';
+import { settingsCommand } from './commands/settings.js';
 
 const program = new Command();
 
@@ -54,5 +55,11 @@ program
   .command('remote-status')
   .description('Use GitHub MCP Server to fetch remote status (Issues, PRs)')
   .action(remoteStatusCommand);
+
+program
+  .command('settings')
+  .alias('setting')
+  .description('Open interactive GitGuide settings for remotes and MCP features')
+  .action(settingsCommand);
 
 program.parse(process.argv);
