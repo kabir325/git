@@ -18,11 +18,11 @@ Existing tools generally fall into two categories: static graphical user interfa
 
 Unlike traditional AI coding assistants that rely on cloud-based APIs and act strictly as conversational agents, GitGuide is an *execution engine*. It leverages local Large Language Models (LLMs) via Ollama (specifically tuned models like `deepseek-coder`) to ensure complete data privacy and zero latency. When a user inputs a natural language command—such as "initialize an empty repo and push it to my github link"—GitGuide's Repo Context Builder dynamically gathers the current state of the repository (branches, diffs, commits, and remotes). This rich context is fed into the AI Planning Engine, which synthesizes a strict, deterministic JSON execution plan, streaming the thought process back to the user in real-time.
 
-Safety is a core tenet of GitGuide's architecture. Before any destructive or state-altering commands are run, the tool intercepts the workflow using an interactive Safety Layer. This layer visualizes the proposed execution plan, allowing the developer to review, edit, or cancel individual steps. Once approved, the Execution Engine sequentially runs the commands, gracefully trapping errors and autonomously querying the AI for immediate fix suggestions if a command fails.
+Safety is a core tenet of GitGuide's architecture. Before risky or state-altering commands are run, the tool scores each step as low, medium, or high risk and applies confirmation rules based on the configured safety level. This makes auto-execute usable for low-risk plans while still pausing for dangerous operations like force pushes or hard resets.
 
-Beyond natural language execution, GitGuide provides a suite of intelligent utilities. It can auto-generate conventional commit messages by analyzing staged diffs, explain the precise impact of complex commands (like `git rebase`) before they are executed, and proactively suggest logical next steps based on the repository's current state. Furthermore, GitGuide includes a powerful `visualize` command that generates a stunning, interactive 2D HTML/Canvas dashboard in the browser, offering developers a clear, topological network graph of their commit history and branch architecture.
+Beyond natural language execution, GitGuide provides a suite of intelligent utilities. It can auto-generate conventional commit messages by analyzing staged diffs, explain the precise impact of complex commands before they are executed, evaluate multiple Ollama models, help resolve merge conflicts, undo the last GitGuide workflow, and generate repository visualizations in the browser.
 
-GitGuide also features an opt-in **Model Context Protocol (MCP)** integration. By seamlessly connecting to remote servers (like GitHub), GitGuide's AI can read open issues and pull requests directly from the terminal, making it a comprehensive, end-to-end repository management tool. By combining local AI planning with deterministic execution, interactive configuration, and beautiful visualizations, GitGuide dramatically lowers the cognitive load of version control, allowing developers to focus on writing code rather than wrestling with Git syntax.
+GitGuide also features an opt-in **Model Context Protocol (MCP)** integration. By seamlessly connecting to remote servers like GitHub, GitGuide can inspect remote repository health, create pull requests, and provide richer repository context directly in the terminal. By combining local AI planning with deterministic execution, self-healing retries, rollback support, structured logging, interactive configuration, and GitHub integration, GitGuide dramatically lowers the cognitive load of version control.
 
 ---
 
@@ -32,9 +32,9 @@ The tool is divided into modular components:
 1. **CLI Layer:** Built with `commander.js`, parsing commands and routing them to handlers.
 2. **Repo Context Builder:** Synchronously gathers Git telemetry (`git status`, `git diff`, branch info) to provide the AI with situational awareness.
 3. **MCP Client Manager (Opt-in):** Connects to GitHub via the Model Context Protocol to fetch live repository issues and pull requests.
-4. **Planning Engine:** Interfaces with local Ollama APIs, enforcing strict JSON schemas to prevent hallucinations and generate actionable plans. Features real-time response streaming.
-5. **Safety Layer:** Uses `inquirer.js` to visualize the plan and force user confirmation or modification before execution.
-6. **Execution Engine:** Runs the generated Git commands sequentially, trapping errors and suggesting AI-driven fixes on the fly.
+4. **Planning Engine:** Interfaces with local Ollama APIs, enforces strict JSON plan validation, and repairs malformed output before execution.
+5. **Safety Layer:** Scores risk for each step, supports safety levels, and only prompts for risky plans or risky revised steps.
+6. **Execution Engine:** Runs commands sequentially, logs every workflow, attempts self-healing retries, and rolls back when a recoverable failure occurs from a clean snapshot.
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for a detailed topological diagram.
 
@@ -82,12 +82,17 @@ gitguide init
 This command will:
 1. Check if you have a remote origin set (and prompt you to add one if you don't).
 2. Ask if you want to enable **GitHub MCP Integration**.
-3. If enabled, prompt you for a GitHub Personal Access Token, saving it securely to a local `.env` file and creating a `.gitguide.config.json` file.
-4. Keep auto execute turned off by default so commands still require approval until you enable it in settings.
+3. If enabled, prompt you for a GitHub Personal Access Token, saving it securely to a local `.env` file and creating a `.gitguide/config.json` file.
+4. Keep auto execute turned off by default so commands still require approval until you enable it later.
 
 At any time, you can reopen configuration and update your repository settings with:
 ```bash
-gitguide settings
+gitguide config
+```
+
+The configuration file is stored at:
+```bash
+.gitguide/config.json
 ```
 
 ---
@@ -95,7 +100,7 @@ gitguide settings
 ## 💻 Core Commands
 
 ### 1. Natural Language Execution
-Tell GitGuide what you want to do in plain English. It will stream a plan, ask for your permission, and execute the commands.
+Tell GitGuide what you want to do in plain English. It will stream a plan, score the risk, and execute it according to your safety level and auto-execute preferences.
 ```bash
 gitguide do "create a branch called feature/auth, add my files, and commit them as 'add login UI'"
 ```
@@ -105,7 +110,7 @@ If you opted into MCP during `gitguide init`, you can fetch live data from GitHu
 ```bash
 gitguide remote-status
 ```
-*Outputs a list of open issues and pull requests for your current repository.*
+*Outputs repository summary, branch state, issues, pull requests, and recent commits for the current GitHub repository.*
 
 ### 3. Smart Commits
 Generate conventional commit messages automatically based on your staged `git diff`.
@@ -113,14 +118,14 @@ Generate conventional commit messages automatically based on your staged `git di
 gitguide commit
 ```
 
-### 4. Settings
-Open an interactive settings menu to update the remote origin, enable or disable auto execute, manage GitHub MCP, and manage the saved GitHub token.
+### 4. Config
+Open an interactive configuration menu to update remote origin, auto execute, default branch, preferred model, safety level, GitHub MCP, and the saved GitHub token.
 ```bash
-gitguide settings
+gitguide config
 ```
 
 ### 5. Safe Push
-Analyze the impact of a push before actually pushing. GitGuide runs a dry-run and explains exactly what will happen to the remote.
+Analyze the impact of a push before actually pushing. GitGuide runs a dry-run, explains what will happen to the remote, and can suggest creating a pull request after the push.
 ```bash
 gitguide push
 ```
@@ -142,6 +147,40 @@ Generate an interactive, full-screen, 2D topological network graph of your repos
 ```bash
 gitguide visualize
 ```
+
+### 9. Undo the Last Workflow
+Use the recorded execution snapshot to undo the latest GitGuide workflow.
+```bash
+gitguide undo
+```
+
+### 10. Resolve Merge Conflicts
+List unmerged files and guide the user through a basic conflict resolution flow.
+```bash
+gitguide resolve-conflicts
+```
+
+### 11. Create Pull Requests
+Create a pull request for the current branch directly through GitHub MCP.
+```bash
+gitguide pr
+```
+
+### 12. Evaluate Ollama Models
+Compare local Ollama models and save the best-performing one as the preferred model.
+```bash
+gitguide evaluate-models
+```
+
+---
+
+## 🧾 Logging
+GitGuide stores execution history, plans, and failures in:
+```bash
+.gitguide/logs/
+```
+
+These logs power workflow auditing, undo support, and post-failure debugging.
 
 ---
 
