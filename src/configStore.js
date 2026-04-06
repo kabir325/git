@@ -1,7 +1,23 @@
 import fs from 'fs';
 import path from 'path';
 
+function ensureDirectory(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+export function getProjectGitGuideDir(projectDir = process.cwd()) {
+  const dirPath = path.join(projectDir, '.gitguide');
+  ensureDirectory(dirPath);
+  return dirPath;
+}
+
 export function getProjectConfigPath(projectDir = process.cwd()) {
+  return path.join(getProjectGitGuideDir(projectDir), 'config.json');
+}
+
+export function getLegacyConfigPath(projectDir = process.cwd()) {
   return path.join(projectDir, '.gitguide.config.json');
 }
 
@@ -15,26 +31,44 @@ export function getProjectGitignorePath(projectDir = process.cwd()) {
 
 export function readProjectConfig(projectDir = process.cwd()) {
   const configPath = getProjectConfigPath(projectDir);
+  const legacyConfigPath = getLegacyConfigPath(projectDir);
 
-  if (!fs.existsSync(configPath)) {
-    return {};
+  if (fs.existsSync(configPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } catch {
+      return {};
+    }
   }
 
-  try {
-    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  } catch {
-    return {};
+  if (fs.existsSync(legacyConfigPath)) {
+    try {
+      const legacyConfig = JSON.parse(fs.readFileSync(legacyConfigPath, 'utf8'));
+      writeProjectConfig(legacyConfig, projectDir);
+      return legacyConfig;
+    } catch {
+      return {};
+    }
   }
+
+  return {};
 }
 
 export function writeProjectConfig(config, projectDir = process.cwd()) {
+  ensureDirectory(getProjectGitGuideDir(projectDir));
   const configPath = getProjectConfigPath(projectDir);
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 }
 
+export function updateProjectConfig(updater, projectDir = process.cwd()) {
+  const currentConfig = readProjectConfig(projectDir);
+  const nextConfig = updater(currentConfig);
+  writeProjectConfig(nextConfig, projectDir);
+  return nextConfig;
+}
+
 export function setGitHubMcpEnabled(enabled, projectDir = process.cwd()) {
-  const config = readProjectConfig(projectDir);
-  const nextConfig = {
+  return updateProjectConfig(config => ({
     ...config,
     mcp: {
       ...(config.mcp || {}),
@@ -43,24 +77,38 @@ export function setGitHubMcpEnabled(enabled, projectDir = process.cwd()) {
         enabled
       }
     }
-  };
-
-  writeProjectConfig(nextConfig, projectDir);
-  return nextConfig;
+  }), projectDir);
 }
 
 export function setAutoExecuteEnabled(enabled, projectDir = process.cwd()) {
-  const config = readProjectConfig(projectDir);
-  const nextConfig = {
+  return updateProjectConfig(config => ({
     ...config,
     execution: {
       ...(config.execution || {}),
       autoExecute: enabled
     }
-  };
+  }), projectDir);
+}
 
-  writeProjectConfig(nextConfig, projectDir);
-  return nextConfig;
+export function setDefaultBranch(defaultBranch, projectDir = process.cwd()) {
+  return updateProjectConfig(config => ({
+    ...config,
+    defaultBranch
+  }), projectDir);
+}
+
+export function setPreferredModel(preferredModel, projectDir = process.cwd()) {
+  return updateProjectConfig(config => ({
+    ...config,
+    preferredModel
+  }), projectDir);
+}
+
+export function setSafetyLevel(safetyLevel, projectDir = process.cwd()) {
+  return updateProjectConfig(config => ({
+    ...config,
+    safetyLevel
+  }), projectDir);
 }
 
 export function readEnvFile(projectDir = process.cwd()) {

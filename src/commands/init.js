@@ -1,12 +1,17 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import ora from 'ora';
 import {
   ensureGitignoreEntry,
+  setAutoExecuteEnabled,
+  setDefaultBranch,
   setGitHubMcpEnabled,
+  setPreferredModel,
+  setSafetyLevel,
   upsertEnvVar
 } from '../configStore.js';
+import { getCurrentBranch } from '../gitUtils.js';
 
 export async function initCommand() {
   console.log(chalk.bold.blue('\nWelcome to GitGuide Initialization! 🧭\n'));
@@ -40,7 +45,7 @@ export async function initCommand() {
       }]);
       
       try {
-        execSync(`git remote add origin ${remoteUrl}`);
+        execFileSync('git', ['remote', 'add', 'origin', remoteUrl], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
         console.log(chalk.green('✓ Remote origin successfully added.\n'));
       } catch (e) {
         console.log(chalk.red('Failed to add remote. Ensure git is initialized (git init) first.\n'));
@@ -76,6 +81,10 @@ export async function initCommand() {
   const spinner = ora('Saving configuration...').start();
 
   try {
+    setAutoExecuteEnabled(false);
+    setDefaultBranch(getCurrentBranch() || 'main');
+    setPreferredModel('deepseek-coder');
+    setSafetyLevel('balanced');
     setGitHubMcpEnabled(enableMcp);
 
     if (enableMcp && mcpToken) {

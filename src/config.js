@@ -1,28 +1,22 @@
-import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { readProjectConfig } from './configStore.js';
+import { getDefaultBranchGuess } from './gitUtils.js';
 
 // Load .env if it exists in the root
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 export function getConfig() {
-  const configPath = path.join(process.cwd(), '.gitguide.config.json');
-  let userConfig = {};
-
-  if (fs.existsSync(configPath)) {
-    try {
-      userConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    } catch (error) {
-      console.warn('⚠️  Warning: Failed to parse .gitguide.config.json');
-    }
-  }
-
-  // MCP configuration defaults
+  const userConfig = readProjectConfig(process.cwd());
   const mcpConfig = userConfig.mcp || {};
   
   return {
+    defaultBranch: userConfig.defaultBranch || getDefaultBranchGuess(),
+    preferredModel: userConfig.preferredModel || 'deepseek-coder',
+    safetyLevel: userConfig.safetyLevel || 'balanced',
     execution: {
-      autoExecute: userConfig.execution?.autoExecute ?? false
+      autoExecute: userConfig.execution?.autoExecute ?? false,
+      explainPlan: userConfig.execution?.explainPlan ?? true
     },
     mcp: {
       github: {

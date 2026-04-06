@@ -2,24 +2,8 @@ import ora from 'ora';
 import chalk from 'chalk';
 import { mcpManager } from '../mcpManager.js';
 import { getConfig } from '../config.js';
-import { execSync } from 'child_process';
-
-/**
- * Extracts owner and repo name from git remote url.
- * E.g. https://github.com/kabir325/dummy.git -> { owner: "kabir325", repo: "dummy" }
- */
-function getGitHubRepoInfo() {
-  try {
-    const remoteUrl = execSync('git config --get remote.origin.url').toString().trim();
-    const match = remoteUrl.match(/github\.com[:\/]([^\/]+)\/(.+?)(\.git)?$/);
-    if (match && match.length >= 3) {
-      return { owner: match[1], repo: match[2].replace('.git', '') };
-    }
-  } catch (e) {
-    // Ignore error
-  }
-  return null;
-}
+import { getCurrentBranch, remoteBranchExists } from '../gitUtils.js';
+import { getGitHubRepoInfo } from '../github.js';
 
 function extractTextContent(response) {
   const textBlock = response?.content?.find(block => typeof block.text === 'string');
@@ -207,9 +191,7 @@ export async function remoteStatusCommand() {
 
   if (!config.mcp.github.enabled) {
     console.log(chalk.yellow('⚠️  GitHub MCP is not enabled.'));
-    console.log(chalk.dim('To opt-in, create a .gitguide.config.json file with:'));
-    console.log(chalk.dim('{\n  "mcp": {\n    "github": { "enabled": true }\n  }\n}'));
-    console.log(chalk.dim('And ensure GITHUB_PERSONAL_ACCESS_TOKEN is set in your environment.'));
+    console.log(chalk.dim('Enable it with "gitguide config" and ensure GITHUB_PERSONAL_ACCESS_TOKEN is set in your environment.'));
     return;
   }
 
@@ -237,6 +219,12 @@ export async function remoteStatusCommand() {
       console.log(chalk.white(`   Stars/Forks/Watchers: `) + chalk.cyan(`${repository.stars}/${repository.forks}/${repository.watchers}`));
       console.log(chalk.white(`   Open issues count: `) + chalk.cyan(String(repository.openIssues)));
       console.log(chalk.white(`   Last updated: `) + chalk.cyan(formatDate(repository.updatedAt)));
+    }
+
+    const currentBranch = getCurrentBranch();
+    if (currentBranch) {
+      console.log(chalk.white(`   Current branch: `) + chalk.cyan(currentBranch));
+      console.log(chalk.white(`   Remote branch exists: `) + chalk.cyan(remoteBranchExists(currentBranch) ? 'yes' : 'no'));
     }
 
     console.log(chalk.bold.yellow('\n📊 Summary:'));

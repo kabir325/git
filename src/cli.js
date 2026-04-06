@@ -8,13 +8,19 @@ import { suggestCommand } from './commands/suggest.js';
 import { visualizeCommand } from './commands/visualize.js';
 import { remoteStatusCommand } from './commands/remoteStatus.js';
 import { settingsCommand } from './commands/settings.js';
+import { configCommand } from './commands/config.js';
+import { createPullRequestCommand } from './commands/pr.js';
+import { undoCommand } from './commands/undo.js';
+import { resolveConflictsCommand } from './commands/resolveConflicts.js';
+import { evaluateModelsCommand } from './commands/evaluateModels.js';
+import { getPackageVersion } from './packageInfo.js';
 
 const program = new Command();
 
 program
   .name('gitguide')
   .description('AI-powered execution engine for Git operations')
-  .version('1.0.0');
+  .version(getPackageVersion());
 
 program
   .command('init')
@@ -53,13 +59,38 @@ program
 
 program
   .command('remote-status')
-  .description('Use GitHub MCP Server to fetch remote status (Issues, PRs)')
+  .description('Use GitHub MCP Server to fetch remote status and repository insights')
   .action(remoteStatusCommand);
 
 program
   .command('settings')
   .alias('setting')
-  .description('Open interactive GitGuide settings for remotes, auto execute, and MCP features')
+  .description('Open interactive GitGuide configuration')
   .action(settingsCommand);
+
+program
+  .command('config')
+  .description('Configure GitGuide defaults like auto execute, model, safety, and MCP')
+  .action(configCommand);
+
+program
+  .command('pr')
+  .description('Create a pull request for the current branch through GitHub MCP')
+  .action(createPullRequestCommand);
+
+program
+  .command('undo')
+  .description('Undo the latest GitGuide execution using the recorded execution snapshot')
+  .action(undoCommand);
+
+program
+  .command('resolve-conflicts')
+  .description('Guide the user through merge conflict resolution')
+  .action(resolveConflictsCommand);
+
+program
+  .command('evaluate-models')
+  .description('Compare Ollama models and store the preferred model in config')
+  .action(evaluateModelsCommand);
 
 program.parse(process.argv);

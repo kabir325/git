@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { getConfig } from "./config.js";
+import { getPackageVersion } from "./packageInfo.js";
 
 class MCPManager {
   constructor() {
@@ -35,7 +36,7 @@ class MCPManager {
       });
 
       const client = new Client(
-        { name: "GitGuide", version: "1.0.0" },
+        { name: "GitGuide", version: getPackageVersion() },
         { capabilities: { tools: {}, resources: {} } }
       );
 
