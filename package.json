@@ -1,8 +1,23 @@
 {
-  "name": "gitguide",
-  "version": "0.5.0",
+  "name": "gitguide-cli",
+  "version": "1.0.0",
   "description": "AI-powered local Git execution engine with safety controls, recovery, and GitHub MCP integration",
-  "main": "index.js",
+  "license": "ISC",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "gitguide": "bin/gitguide.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "ARCHITECTURE.md"
+  ],
   "scripts": {
     "test": "node --test"
   },
@@ -14,8 +29,20 @@
     "automation"
   ],
   "author": "",
-  "license": "ISC",
-  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kabir325/gitGuide.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kabir325/gitGuide/issues"
+  },
+  "homepage": "https://github.com/kabir325/gitGuide#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "boxen": "^8.0.1",
@@ -27,8 +54,5 @@
     "inquirer": "^13.3.2",
     "open": "^11.0.0",
     "ora": "^9.3.0"
-  },
-  "bin": {
-    "gitguide": "./bin/gitguide.js"
   }
 }

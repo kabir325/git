@@ -45,7 +45,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for a detailed topological diagram.
 GitGuide is designed to be installed globally on your machine.
 
 ### Prerequisites
-* **Node.js** (v16+)
+* **Node.js** (v18+)
 * **Git** installed and available in your PATH
 * **Ollama** installed and running locally (`http://localhost:11434`)
 * **Ollama Model:** Pull the required model by running:
@@ -53,7 +53,19 @@ GitGuide is designed to be installed globally on your machine.
   ollama run deepseek-coder
   ```
 
-### Setup
+### Install (npm)
+
+```bash
+npm install -g gitguide-cli
+```
+
+The command stays the same:
+
+```bash
+gitguide --help
+```
+
+### Setup (from source)
 
 1. Clone or download this repository.
 2. Navigate to the project directory:
