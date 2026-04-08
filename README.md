@@ -53,17 +53,7 @@ GitGuide is designed to be installed globally on your machine.
   ollama run deepseek-coder
   ```
 
-### Install (npm)
 
-```bash
-npm install -g gitguide-cli
-```
-
-The command stays the same:
-
-```bash
-gitguide --help
-```
 
 ### Setup (from source)
 
